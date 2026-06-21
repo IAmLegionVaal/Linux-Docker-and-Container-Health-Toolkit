@@ -1,66 +1,61 @@
 # Linux Docker and Container Health Toolkit
 
-A read-only Bash toolkit for collecting Docker engine, container, image, volume, network, event, health-check, and resource evidence into timestamped reports.
+A Linux support toolkit for diagnosing Docker engine and container problems and applying selected maintenance actions.
 
-## Purpose
-
-This project helps Linux support engineers diagnose container incidents without changing running workloads. It is designed for ticket evidence, escalation notes, lab validation, and repeatable operational checks.
-
-## Checks performed
-
-- Docker CLI and daemon availability
-- Docker service state and recent service events
-- Engine version, storage driver, cgroup mode, and runtime information
-- Running, stopped, restarting, dead, and unhealthy containers
-- Restart counts, exit codes, health status, image, ports, and creation time
-- One-shot CPU, memory, network, block I/O, and process statistics
-- Image inventory, dangling images, volumes, and networks
-- Recent Docker events
-- Tail logs for failed or unhealthy containers
-- Disk use reported by Docker
-
-## Usage
+## Diagnostic script
 
 ```bash
 chmod +x src/docker_container_health.sh
 sudo ./src/docker_container_health.sh
 ```
 
-Optional parameters:
+## Repair script
+
+Preview a Docker service restart:
 
 ```bash
-sudo ./src/docker_container_health.sh --hours 24 --log-lines 200 --output /tmp/docker-health
+chmod +x src/docker_container_repair.sh
+sudo ./src/docker_container_repair.sh --restart-docker --dry-run
 ```
 
-## Output
+Restart the Docker service:
 
-The toolkit creates a timestamped directory containing:
+```bash
+sudo ./src/docker_container_repair.sh --restart-docker
+```
 
-- `docker-health.txt`
-- `containers.csv`
-- `summary.json`
-- `command-errors.log`
-- Per-container log excerpts when investigation is needed
+Run an action on one container:
 
-## Safety
+```bash
+sudo ./src/docker_container_repair.sh --container web01 --action restart
+sudo ./src/docker_container_repair.sh --container web01 --action start
+sudo ./src/docker_container_repair.sh --container web01 --action unpause
+```
 
-The script never starts, stops, restarts, removes, prunes, pauses, kills, or updates containers. It does not alter images, networks, volumes, or daemon configuration.
+Optional cleanup actions:
+
+```bash
+sudo ./src/docker_container_repair.sh --prune-stopped
+sudo ./src/docker_container_repair.sh --prune-dangling-images
+```
+
+## Repair behaviour
+
+- Restarts the Docker system service.
+- Performs one explicit action on one selected container.
+- Supports optional cleanup of stopped containers or dangling images after confirmation.
+- Captures Docker and container state before and after repair.
+- Verifies the service and selected container after applicable actions.
+- Supports dry-run, prompts, logs and clear exit codes.
+
+Restarting Docker can interrupt workloads. Cleanup actions are explicit. The tool does not remove running containers, volumes or networks, alter daemon configuration or redeploy applications.
 
 ## Requirements
 
 - Bash 4+
 - Docker CLI
-- Permission to query the Docker socket
-- `systemctl` and `journalctl` for full service evidence
-
-## Validation ideas
-
-- Healthy running container
-- Container with a failing health check
-- Restart-looping container
-- Exited container with a non-zero exit code
-- Docker daemon stopped
-- Host with no containers
+- Permission to access the Docker socket
+- systemd for Docker service restart
 
 ## Author
 
